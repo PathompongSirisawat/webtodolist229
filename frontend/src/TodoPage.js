@@ -1,112 +1,54 @@
 import React, { useEffect, useState } from "react";
-import API from "./api";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
 export default function TodoPage() {
 
-  const [tasks, setTasks] = useState([]);
+  const [tasks, setTasks] = useState(() => {
+    const saved = localStorage.getItem("tasks");
+    return saved ? JSON.parse(saved) : [];
+  });
+
   const [title, setTitle] = useState("");
   const [deadline, setDeadline] = useState("");
 
-  // ✅ โหลด todo ของ user ปัจจุบัน
-  const fetchTodos = async () => {
-    try {
-
-      const me = await API.get("/users/me");
-
-      const res = await API.get(
-        `/todos?populate=users_permissions_user&filters[users_permissions_user][id][$eq]=${me.data.id}`
-      );
-
-      const mapped = res.data.data.map(item => ({
-        id: item.id,
-        documentId: item.documentId,
-        title: item.title,
-        dueDate: item.dueDate,
-        priority: item.priority,
-        completed: item.completed
-      }));
-
-      setTasks(mapped);
-
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  // ⭐ เพิ่ม state สำหรับ confirm delete
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
   useEffect(() => {
-    fetchTodos();
-  }, []);
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+  }, [tasks]);
 
-  // ✅ เพิ่มงาน + ผูก user
-  const addTask = async () => {
-
+  const addTask = () => {
     if (!title || !deadline) return;
 
-    try {
+    setTasks(prev => [
+      ...prev,
+      {
+        id: Date.now().toString(),
+        title,
+        deadline,
+        done: false,
+        alertedDay: false,
+        alertedHour: false,
+      },
+    ]);
 
-      const me = await API.get("/users/me");
-
-      await API.post("/todos", {
-        data: {
-          title,
-          dueDate: new Date(deadline).toISOString(),
-          priority: 0,
-          completed: false,
-          users_permissions_user: me.data.id
-        }
-      });
-
-      setTitle("");
-      setDeadline("");
-
-      fetchTodos();
-
-    } catch (err) {
-      console.error(err);
-    }
+    setTitle("");
+    setDeadline("");
   };
 
-  // ✅ toggle สถานะ
-  const toggleDone = async (task) => {
-    try {
-
-      await API.put(`/todos/${task.documentId}`, {
-        data: {
-          completed: !task.completed
-        }
-      });
-
-      setTasks(prev =>
-        prev.map(t =>
-          t.documentId === task.documentId
-            ? { ...t, completed: !t.completed }
-            : t
-        )
-      );
-
-    } catch (err) {
-      console.error(err);
-    }
+  const toggleDone = (id) => {
+    setTasks(prev =>
+      prev.map(t => t.id === id ? { ...t, done: !t.done } : t)
+    );
   };
 
-  // ✅ ลบงาน
-  const deleteTask = async (task) => {
-    try {
-
-      await API.delete(`/todos/${task.documentId}`);
-
-      setTasks(prev =>
-        prev.filter(t => t.documentId !== task.documentId)
-      );
-
-    } catch (err) {
-      console.error(err);
-    }
+  const deleteTask = (id) => {
+    setTasks(prev => prev.filter(t => t.id !== id));
   };
 
-  const activeTasks = tasks.filter(t => !t.completed);
-  const doneTasks = tasks.filter(t => t.completed);
+  const activeTasks = tasks.filter(t => !t.done);
+  const doneTasks = tasks.filter(t => t.done);
 
   const onDragEnd = (result) => {
     if (!result.destination) return;
@@ -115,8 +57,7 @@ export default function TodoPage() {
     const [moved] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, moved);
 
-    const reordered = [...items, ...doneTasks];
-    setTasks(reordered);
+    setTasks([...items, ...doneTasks]);
   };
 
   const getRemaining = (date) => {
@@ -130,6 +71,31 @@ export default function TodoPage() {
     return `${d}d ${h}h ${m}m`;
   };
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTasks(prev =>
+        prev.map(task => {
+          if (task.done) return task;
+
+          const diff = new Date(task.deadline) - new Date();
+
+          if (diff < 86400000 && !task.alertedDay) {
+            alert(`ใกล้ถึงกำหนดภายใน 1 วัน: ${task.title}`);
+            return { ...task, alertedDay: true };
+          }
+
+          if (diff < 3600000 && !task.alertedHour) {
+            alert(`ใกล้ถึงกำหนดภายใน 1 ชั่วโมง: ${task.title}`);
+            return { ...task, alertedHour: true };
+          }
+
+          return task;
+        })
+      );
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">
@@ -182,7 +148,7 @@ export default function TodoPage() {
 
                 <tbody>
                   {activeTasks.map((t, index) => (
-                    <Draggable key={t.documentId} draggableId={t.documentId} index={index}>
+                    <Draggable key={t.id} draggableId={t.id} index={index}>
                       {(provided) => (
                         <tr
                           ref={provided.innerRef}
@@ -191,14 +157,20 @@ export default function TodoPage() {
                           className="border-t"
                         >
                           <td className="p-3 break-words">{t.title}</td>
-                          <td className="p-3">{new Date(t.dueDate).toLocaleString()}</td>
-                          <td className="p-3">{getRemaining(t.dueDate)}</td>
+                          <td className="p-3">{new Date(t.deadline).toLocaleString()}</td>
+                          <td className="p-3">{getRemaining(t.deadline)}</td>
                           <td className="p-3 text-yellow-600">ยังไม่เสร็จ</td>
                           <td className="p-3 space-x-2">
-                            <button onClick={() => toggleDone(t)} className="bg-green-500 text-white px-3 py-1 rounded">
+                            <button
+                              onClick={() => toggleDone(t.id)}
+                              className="bg-green-500 text-white px-3 py-1 rounded"
+                            >
                               เสร็จ
                             </button>
-                            <button onClick={() => deleteTask(t)} className="bg-gray-400 text-white px-3 py-1 rounded">
+                            <button
+                              onClick={() => setConfirmDeleteId(t.id)}
+                              className="bg-gray-400 text-white px-3 py-1 rounded"
+                            >
                               ลบ
                             </button>
                           </td>
@@ -218,38 +190,80 @@ export default function TodoPage() {
             งานที่เสร็จแล้ว
           </h2>
 
-          <table className="w-full border rounded-xl overflow-hidden">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="p-3 text-left">งาน</th>
-                <th className="p-3 text-left">กำหนดเวลา</th>
-                <th className="p-3 text-left">สถานะ</th>
-                <th className="p-3 text-left">จัดการ</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {doneTasks.map((t) => (
-                <tr key={t.documentId} className="border-t">
-                  <td className="p-3">{t.title}</td>
-                  <td className="p-3">{new Date(t.dueDate).toLocaleString()}</td>
-                  <td className="p-3 text-green-600 font-semibold">เสร็จแล้ว</td>
-                  <td className="p-3 space-x-2">
-                    <button onClick={() => toggleDone(t)} className="bg-red-500 text-white px-3 py-1 rounded">
-                      ยกเลิก
-                    </button>
-                    <button onClick={() => deleteTask(t)} className="bg-gray-400 text-white px-3 py-1 rounded">
-                      ลบ
-                    </button>
-                  </td>
+          <div className="overflow-hidden rounded-xl border">
+            <table className="w-full">
+              <thead className="bg-gray-50 text-gray-700">
+                <tr>
+                  <th className="p-3 text-left">งาน</th>
+                  <th className="p-3 text-left">กำหนดเวลา</th>
+                  <th className="p-3 text-left">สถานะ</th>
+                  <th className="p-3 text-left">จัดการ</th>
                 </tr>
-              ))}
-            </tbody>
+              </thead>
 
-          </table>
+              <tbody className="divide-y">
+                {doneTasks.map((t) => (
+                  <tr key={t.id}>
+                    <td className="p-3 break-words">{t.title}</td>
+                    <td className="p-3">{new Date(t.deadline).toLocaleString()}</td>
+                    <td className="p-3 text-green-600 font-semibold">เสร็จแล้ว</td>
+                    <td className="p-3 space-x-2">
+                      <button
+                        onClick={() => toggleDone(t.id)}
+                        className="bg-red-500 text-white px-3 py-1 rounded-lg"
+                      >
+                        ยกเลิก
+                      </button>
+                      <button
+                        onClick={() => setConfirmDeleteId(t.id)}
+                        className="bg-gray-400 text-white px-3 py-1 rounded-lg"
+                      >
+                        ลบ
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
       </div>
+
+      {/* ⭐ Confirm Delete Modal */}
+      {confirmDeleteId && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 w-80 space-y-4">
+            <h3 className="text-lg font-bold text-gray-800">
+              ยืนยันการลบ
+            </h3>
+
+            <p className="text-gray-600">
+              คุณแน่ใจหรือไม่ว่าต้องการลบงานนี้?
+            </p>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setConfirmDeleteId(null)}
+                className="px-4 py-2 rounded-lg bg-gray-300"
+              >
+                ยกเลิก
+              </button>
+
+              <button
+                onClick={() => {
+                  deleteTask(confirmDeleteId);
+                  setConfirmDeleteId(null);
+                }}
+                className="px-4 py-2 rounded-lg bg-red-500 text-white"
+              >
+                ลบ
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
