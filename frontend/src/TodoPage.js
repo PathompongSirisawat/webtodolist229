@@ -10,8 +10,13 @@ export default function TodoPage() {
 
   const fetchTodos = async () => {
     try {
-      const res = await API.get(`/todos?populate=*`);
-      
+
+      const me = await API.get("/users/me");
+
+      const res = await API.get(
+        `/todos?populate=users_permissions_user&filters[users_permissions_user][id][$eq]=${me.data.id}`
+      );
+
       const mapped = res.data.data.map(item => ({
         id: item.id,
         documentId: item.documentId,
@@ -21,10 +26,10 @@ export default function TodoPage() {
         completed: item.completed
       }));
 
-      setTasks(mapped); // แสดงทุก todo ก่อน
+      setTasks(mapped);
 
     } catch (err) {
-      console.error("Error fetching todos:", err.response?.data || err);
+      console.error(err);
     }
   };
 
@@ -33,31 +38,36 @@ export default function TodoPage() {
   }, []);
 
   const addTask = async () => {
+
     if (!title || !deadline) return;
 
     try {
-      // ไม่ต้องส่ง users_permissions_user
-      // Strapi จะ auto-assign ให้ตาม authenticated user
+
+      const me = await API.get("/users/me");
+
       await API.post("/todos", {
         data: {
           title,
           dueDate: new Date(deadline).toISOString(),
           priority: 0,
-          completed: false
+          completed: false,
+          users_permissions_user: me.data.id
         }
       });
 
       setTitle("");
       setDeadline("");
+
       fetchTodos();
 
     } catch (err) {
-      console.error("Error creating todo:", err.response?.data || err);
+      console.error(err);
     }
   };
 
   const toggleDone = async (task) => {
     try {
+
       await API.put(`/todos/${task.documentId}`, {
         data: {
           completed: !task.completed
@@ -73,12 +83,13 @@ export default function TodoPage() {
       );
 
     } catch (err) {
-      console.error("Error toggling todo:", err.response?.data || err);
+      console.error(err);
     }
   };
 
   const deleteTask = async (task) => {
     try {
+
       await API.delete(`/todos/${task.documentId}`);
 
       setTasks(prev =>
@@ -86,7 +97,7 @@ export default function TodoPage() {
       );
 
     } catch (err) {
-      console.error("Error deleting todo:", err.response?.data || err);
+      console.error(err);
     }
   };
 
@@ -115,6 +126,7 @@ export default function TodoPage() {
     return `${d}d ${h}h ${m}m`;
   };
 
+
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-6xl mx-auto bg-white shadow-xl rounded-2xl p-8 space-y-8">
@@ -140,7 +152,7 @@ export default function TodoPage() {
 
           <button
             onClick={addTask}
-            className="bg-blue-500 text-white px-6 rounded-xl hover:bg-blue-600 transition"
+            className="bg-blue-500 text-white px-6 rounded-xl"
           >
             เพิ่มงาน
           </button>
@@ -172,23 +184,17 @@ export default function TodoPage() {
                           ref={provided.innerRef}
                           {...provided.draggableProps}
                           {...provided.dragHandleProps}
-                          className="border-t hover:bg-gray-50"
+                          className="border-t"
                         >
                           <td className="p-3 break-words">{t.title}</td>
-                          <td className="p-3">{new Date(t.dueDate).toLocaleString('th-TH')}</td>
+                          <td className="p-3">{new Date(t.dueDate).toLocaleString()}</td>
                           <td className="p-3">{getRemaining(t.dueDate)}</td>
                           <td className="p-3 text-yellow-600">ยังไม่เสร็จ</td>
                           <td className="p-3 space-x-2">
-                            <button 
-                              onClick={() => toggleDone(t)} 
-                              className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition"
-                            >
+                            <button onClick={() => toggleDone(t)} className="bg-green-500 text-white px-3 py-1 rounded">
                               เสร็จ
                             </button>
-                            <button 
-                              onClick={() => deleteTask(t)} 
-                              className="bg-gray-400 text-white px-3 py-1 rounded hover:bg-gray-500 transition"
-                            >
+                            <button onClick={() => deleteTask(t)} className="bg-gray-400 text-white px-3 py-1 rounded">
                               ลบ
                             </button>
                           </td>
@@ -220,27 +226,22 @@ export default function TodoPage() {
 
             <tbody>
               {doneTasks.map((t) => (
-                <tr key={t.documentId} className="border-t hover:bg-gray-50">
+                <tr key={t.documentId} className="border-t">
                   <td className="p-3">{t.title}</td>
-                  <td className="p-3">{new Date(t.dueDate).toLocaleString('th-TH')}</td>
+                  <td className="p-3">{new Date(t.dueDate).toLocaleString()}</td>
                   <td className="p-3 text-green-600 font-semibold">เสร็จแล้ว</td>
                   <td className="p-3 space-x-2">
-                    <button 
-                      onClick={() => toggleDone(t)} 
-                      className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
-                    >
+                    <button onClick={() => toggleDone(t)} className="bg-red-500 text-white px-3 py-1 rounded">
                       ยกเลิก
                     </button>
-                    <button 
-                      onClick={() => deleteTask(t)} 
-                      className="bg-gray-400 text-white px-3 py-1 rounded hover:bg-gray-500 transition"
-                    >
+                    <button onClick={() => deleteTask(t)} className="bg-gray-400 text-white px-3 py-1 rounded">
                       ลบ
                     </button>
                   </td>
                 </tr>
               ))}
             </tbody>
+
           </table>
         </div>
 
