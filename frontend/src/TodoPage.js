@@ -8,7 +8,6 @@ export default function TodoPage() {
   const [title, setTitle] = useState("");
   const [deadline, setDeadline] = useState("");
 
-  // ✅ โหลด todo ของ user ปัจจุบัน
   const fetchTodos = async () => {
     try {
 
@@ -38,7 +37,6 @@ export default function TodoPage() {
     fetchTodos();
   }, []);
 
-  // ✅ เพิ่มงาน + ผูก user
   const addTask = async () => {
 
     if (!title || !deadline) return;
@@ -67,7 +65,6 @@ export default function TodoPage() {
     }
   };
 
-  // ✅ toggle สถานะ
   const toggleDone = async (task) => {
     try {
 
@@ -90,7 +87,6 @@ export default function TodoPage() {
     }
   };
 
-  // ✅ ลบงาน
   const deleteTask = async (task) => {
     try {
 

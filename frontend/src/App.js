@@ -14,7 +14,7 @@ function App() {
         <div className="w-full max-w-md">
           {mode === "login" ? (
             <>
-              <Login onSuccess={() => setAuth(true)} />
+              <Login onSuccess={() => setAuth(true)} onNavigateToRegister={() => setMode("register")} />
               <p
                 className="text-center mt-4 text-blue-500 cursor-pointer"
                 onClick={() => setMode("register")}
