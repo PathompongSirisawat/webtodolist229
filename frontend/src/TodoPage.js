@@ -339,7 +339,7 @@ export default function TodoPage() {
         {/* Completed Tasks Section */}
         {doneTasks.length > 0 && (
           <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-            <div className="bg-[#AEDCAE] py-4 px-6 flex items-center justify-between">
+            <div className="bg-[#a4ebc3] py-4 px-6 flex items-center justify-between">
               <h2 className="text-white text-xl font-semibold">Completed Tasks</h2>
               <span className="bg-white text-[#5FAD5F] px-3 py-1 rounded-full text-sm font-bold">
                 {doneTasks.length} done
