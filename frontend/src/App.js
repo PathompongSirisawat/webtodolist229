@@ -6,7 +6,7 @@ import { isLoggedIn, logout } from "./auth";
 
 function App() {
   const [auth, setAuth] = useState(isLoggedIn());
-  const [mode, setMode] = useState("login");
+  const [mode, setMode] = useState("login"); // Default mode is 'login'
 
   if (!auth) {
     return (
