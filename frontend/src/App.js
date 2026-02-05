@@ -13,25 +13,15 @@ function App() {
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="w-full max-w-md">
           {mode === "login" ? (
-            <>
-              <Login onSuccess={() => setAuth(true)} onNavigateToRegister={() => setMode("register")} />
-              <p
-                className="text-center mt-4 text-blue-500 cursor-pointer"
-                onClick={() => setMode("register")}
-              >
-                ยังไม่มีบัญชี? สมัครสมาชิก
-              </p>
-            </>
+            <Login 
+              onSuccess={() => setAuth(true)} 
+              onNavigateToRegister={() => setMode("register")} 
+            />
           ) : (
-            <>
-              <Register onSuccess={() => setAuth(true)} />
-              <p
-                className="text-center mt-4 text-blue-500 cursor-pointer"
-                onClick={() => setMode("login")}
-              >
-                มีบัญชีแล้ว? เข้าสู่ระบบ
-              </p>
-            </>
+            <Register 
+              onSuccess={() => setAuth(true)} 
+              onNavigateToLogin={() => setMode("login")} 
+            />
           )}
         </div>
       </div>
