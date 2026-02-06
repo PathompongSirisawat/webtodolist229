@@ -60,3 +60,31 @@ deploy-all: all-be all-fe
 	@echo "Backend: $(BACKEND_URL)"
 	@echo "Frontend: https://frontend-service-231380388494.asia-southeast1.run.app"
 	@echo "------------------------------------------------"
+
+
+# ... (คำสั่งเดิมของ Backend/Frontend) ...
+
+# --- Cloud Function Commands ---
+deploy-func:
+	@echo "Deploying Email Notifier Function..."
+	cd email-notifier && gcloud functions deploy todo-email-notifier \
+		--runtime nodejs18 \
+		--trigger-topic check-todos-topic \
+		--entry-point checkTodos \
+		--region asia-southeast1 \
+		--allow-unauthenticated
+
+# --- Scheduler Command (รันครั้งเดียวพอ) ---
+create-job:
+	@echo "Creating Cron Job..."
+	gcloud scheduler jobs create pubsub cron-check-todos \
+		--schedule "*/10 * * * *" \
+		--topic check-todos-topic \
+		--message-body "Check Now" \
+		--time-zone "Asia/Bangkok" \
+		--location asia-southeast1
+
+# --- Test Command ---
+test-func:
+	@echo "Manually triggering the job..."
+	gcloud scheduler jobs run cron-check-todos --location asia-southeast1
