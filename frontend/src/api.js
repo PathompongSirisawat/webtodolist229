@@ -2,9 +2,8 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL:
-    import.meta.env.VITE_API_URL ||
-    "http://localhost:1337/api",
+  // เติม /api ต่อท้าย URL หลัก
+  baseURL: process.env.REACT_APP_API_URL ? `${process.env.REACT_APP_API_URL}/api` : "http://localhost:1337/api",
 });
 
 API.interceptors.request.use((config) => {
