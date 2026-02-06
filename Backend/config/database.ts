@@ -13,8 +13,8 @@ export default ({ env }) => {
         database: env('DATABASE_NAME', 'strapi'),
         user: env('DATABASE_USERNAME', 'strapi'),
         password: env('DATABASE_PASSWORD', 'strapi'),
-        // ในส่วน postgres -> connection
-        ssl: env('DATABASE_SSL', 'false') === 'true' ? { rejectUnauthorized: false } : false,
+        // เปลี่ยนจาก env.bool(...) เป็นการเช็ค string ตรงๆ
+        ssl: env('DATABASE_SSL') === 'true' ? { rejectUnauthorized: false } : false,
         schema: env('DATABASE_SCHEMA', 'public'),
       },
       pool: { min: env.int('DATABASE_POOL_MIN', 2), max: env.int('DATABASE_POOL_MAX', 10) },

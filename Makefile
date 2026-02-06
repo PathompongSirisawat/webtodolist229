@@ -25,7 +25,10 @@ deploy-be:
 		--set-env-vars "DATABASE_USERNAME=postgres" \
 		--set-env-vars "DATABASE_PASSWORD=TechnoCloud@Lnw007" \
 		--set-env-vars "DATABASE_SSL=true" \
-		--set-env-vars "NODE_ENV=production"
+		--set-env-vars "NODE_ENV=production" \
+		--timeout=300 \
+		--cpu=1 \
+		--memory=1Gi
 
 # --- Frontend Commands ---
 build-fe:
