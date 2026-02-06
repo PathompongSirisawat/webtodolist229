@@ -26,6 +26,11 @@ deploy-be:
 		--set-env-vars "DATABASE_PASSWORD=TechnoCloud@Lnw007" \
 		--set-env-vars "DATABASE_SSL=true" \
 		--set-env-vars "NODE_ENV=production" \
+		--set-env-vars "APP_KEYS=DkZj7w9x+1u5v5kL/5zQ==,8jK92d+4z9x1s5vL/1zQ==,3jK7w9x+1u5v5kL/5zQ==,4jK92d+4z9x1s5vL/1zQ==" \
+		--set-env-vars "API_TOKEN_SALT=somerandomsalt123456" \
+		--set-env-vars "ADMIN_JWT_SECRET=supersecretjwtkeyforadmin" \
+		--set-env-vars "TRANSFER_TOKEN_SALT=anotherrandomsalt789012" \
+		--set-env-vars "JWT_SECRET=jwtsecretforuserspermissionsplugin" \
 		--timeout=300 \
 		--cpu=1 \
 		--memory=1Gi
