@@ -12,16 +12,20 @@ build-be:
 	cd Backend && gcloud builds submit --tag $(BACKEND_IMAGE) .
 
 deploy-be:
-	@echo "Deploying Backend to Cloud Run with Supabase..."
+	@echo "Deploying Backend..."
 	gcloud run deploy strapi-backend \
 		--image $(BACKEND_IMAGE) \
 		--platform managed \
 		--region $(REGION) \
 		--allow-unauthenticated \
-		--set-env-vars "^--^DATABASE_CLIENT=postgres" \
-		--set-env-vars "DATABASE_URL=postgresql://postgres:TechnoCloud%40Lnw007@db.jiumbxrplspqtewwpvqa.supabase.co:5432/postgres" \
+		--set-env-vars "DATABASE_CLIENT=postgres" \
+		--set-env-vars "DATABASE_HOST=db.jiumbxrplspqtewwpvqa.supabase.co" \
+		--set-env-vars "DATABASE_PORT=5432" \
+		--set-env-vars "DATABASE_NAME=postgres" \
+		--set-env-vars "DATABASE_USERNAME=postgres" \
+		--set-env-vars "DATABASE_PASSWORD=TechnoCloud@Lnw007" \
 		--set-env-vars "DATABASE_SSL=true" \
-		--set-env-vars "DATABASE_SSL_REJECT_UNAUTHORIZED=false"
+		--set-env-vars "NODE_ENV=production"
 
 # --- Frontend Commands ---
 build-fe:
