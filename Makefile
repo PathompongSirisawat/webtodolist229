@@ -68,7 +68,8 @@ deploy-all: all-be all-fe
 deploy-func:
 	@echo "Deploying Email Notifier Function..."
 	cd email-notifier && gcloud functions deploy todo-email-notifier \
-		--runtime nodejs18 \
+		--gen2 \
+		--runtime nodejs20 \
 		--trigger-topic check-todos-topic \
 		--entry-point checkTodos \
 		--region asia-southeast1 \
