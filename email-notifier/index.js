@@ -37,9 +37,9 @@ exports.checkTodos = async (message, context) => {
         // คำนวณส่วนต่างเป็นนาที
         const diffInMinutes = dueDate.diff(now, 'minute');
 
-        // 3. เงื่อนไข: เหลือเวลา 55 ถึง 65 นาที (คือประมาณ 1 ชม.)
-        // เราเผื่อบวกลบไว้ เพราะ Cron Job อาจจะไม่ได้รันวินาทีเป๊ะๆ
-        return diffInMinutes >= 55 && diffInMinutes <= 65;
+        // ⚠️ แก้ตรงนี้ชั่วคราว: ส่งทุกงานที่ยังไม่หมดอายุ (ค่าเป็นบวก)
+        // จากเดิม: return diffInMinutes >= 55 && diffInMinutes <= 65;
+        return diffInMinutes > 0;
       });
 
       // 4. ถ้ามีงานใกล้หมดเวลา ให้เตรียมส่ง Email
