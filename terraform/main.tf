@@ -1,22 +1,28 @@
-#กำหนด Provider 
-provider "google" {
-  project = "technocloudlnw007-486508" 
-  region  = "asia-southeast1"
+#กำหนดตัวแปรสำหรับ Cleanup Function
+variable "cleanup_function_url" {
+  default = "https://cleanup-tasks-231380388494.asia-southeast1.run.app"
 }
 
-#สร้าง Pub/Sub Topic 
-resource "google_pubsub_topic" "todo_topic" {
-  name = "check-todos-topic-terraform" 
+variable "service_account_email" {
+  default = "231380388494-compute@developer.gserviceaccount.com"
 }
 
-#สร้าง Cloud Scheduler (นาฬิกาปลุก)
-resource "google_cloud_scheduler_job" "todo_scheduler" {
-  name     = "cron-check-todos-terraform"
-  schedule = "*/10 * * * *"
-  time_zone = "Asia/Bangkok"
+#สร้าง Cloud Scheduler แบบ HTTP Target สำหรับ Cleanup Tasks
+resource "google_cloud_scheduler_job" "cleanup_scheduler" {
+  name             = "cleanup-tasks-daily-tf" # เติม -tf ให้รู้ว่าสร้างจาก Terraform
+  description      = "Cleanup expired tasks at midnight (Created by Terraform)"
+  schedule         = "0 0 * * *" # รันทุกเที่ยงคืน
+  time_zone        = "Asia/Bangkok"
+  region           = "asia-southeast1"
+  attempt_deadline = "320s"
 
-  pubsub_target {
-    topic_name = google_pubsub_topic.todo_topic.id
-    data       = base64encode("Check Now")
+  http_target {
+    http_method = "POST"
+    uri         = var.cleanup_function_url
+
+    # ส่วนสำคัญ: การยืนยันตัวตนผ่าน OIDC Token เพื่อให้มีสิทธิ์เรียก Function
+    oidc_token {
+      service_account_email = var.service_account_email
+    }
   }
 }
